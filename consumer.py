@@ -1,6 +1,5 @@
 from configparser import ConfigParser
 from pathlib import Path
-import pathlib
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,7 +19,7 @@ if __name__ == "__main__":
     consumer = Consumer(config)
 
     # subscribe to topic
-    topic = "bookings"
+    topic = "accounts"
     consumer.subscribe([topic])
 
     # poll for new messages from kafka and print them.
@@ -35,7 +34,7 @@ if __name__ == "__main__":
                 # extract the (optional) key and value and print
 
                 print(
-                    f"Consumed event from topic{msg.topic()}: key = {msg.key().decode('utf-8')} value = {msg.value().decode('utf-8')}"
+                    f"Consumed event from topic{msg.topic()}: key = {msg.key().decode('utf-8') if msg.key() else  None} value = {msg.value().decode('utf-8')}"
                 )
     except KeyboardInterrupt:
         pass
