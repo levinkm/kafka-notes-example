@@ -1,3 +1,4 @@
 confluent-kafka
 black
+configparser==5.3.0
 

@@ -84,15 +84,15 @@ produce.flush()
 -   This function will also perfom compression if configured and also perfom retries if any network issues is experinced.
 -   The produce method is asynchronas, to ensure that all the current produced requests are complete we need to call the _produce.flush()_ method.
 
-2. init_transactions() -> used to initialize transactions handling for this producer instance. parameters that can be passed is _timeout_.
+2. init*transactions() -> used to initialize transactions handling for this producer instance. parameters that can be passed is \_timeout*.
 
 3. begin_transactions() -> used to begin a new transaction.
 
-4. commit_transaction() -> Flush any active produce requests and mark transaction as commited. accepts _timeout_ as the parameter.
+4. commit*transaction() -> Flush any active produce requests and mark transaction as commited. accepts \_timeout* as the parameter.
 
-5. abort_transaction() -> used to purge all produce requests in this transaction and mark transaction as aborted. takes _timeout_ as the parameter.
+5. abort*transaction() -> used to purge all produce requests in this transaction and mark transaction as aborted. takes \_timeout* as the parameter.
 
-6. send_offsets_to_transaction() -> Used to communicate with consumer group when transsaction includes producers and consumers. Takes 3 parameters: _offsets_, _group_metadata_, _timeout_.
+6. send*offsets_to_transaction() -> Used to communicate with consumer group when transsaction includes producers and consumers. Takes 3 parameters: \_offsets*, _group_metadata_, _timeout_.
 
 # Kafka Consumers
 
@@ -106,22 +106,22 @@ This rebalancing forms the backborn of several features of kafka.
 The consumer keeps track of completed events that has succesfully been processed. this can be done by us or automatically, depending on the config property.
 
 ### Consumer Constructor
+
 Just like the producer. it takes the config dictionary. the config also has the bootsrap server of the broker to connect to.
 
-``` python
+```python
 consumer = Consumer(config)
 ```
 
 #### Consumer Configurations
 
-1. group.id -> Uniquely identifies this application so that additional instance are included in a consumer group.
-2. outo.offset.reset -> Determines offset to begin consuming at if no valid stored offset os available. The defailt value is *latest*.
-3. enable.auto.commit -> if true, periodically commit offsets in the background. The default value is *true*. The recomended way is to set this value to false and commit the offsets manualy.
-4. isolation.level -> used in transactional processing. (*read_uncommitted*, *read_committed*). The default value is *read_committed*. when set to *read_uncommitted* value, the consumer reads all the events that were uncommited including those that were aborted. 
+1. group.id -> Uniquely identifies this application so that additional instance are included in a consumer group. 2. outo.offset.reset -> Determines offset to begin consuming at if no valid stored offset os available. The defailt value is _latest_.
+2. enable.auto.commit -> if true, periodically commit offsets in the background. The default value is _true_. The recomended way is to set this value to false and commit the offsets manualy.
+3. isolation.level -> used in transactional processing. (_read_uncommitted_, _read_committed_). The default value is _read_committed_. when set to _read_uncommitted_ value, the consumer reads all the events that were uncommited including those that were aborted.
 
 #### Subscribe ti Topics
 
-``` python
+```python
 consumer.subscribe(['bookings'],on_assign=assignment_callback)
 
 def assignment_callback(consumer,topic_partitions):
@@ -136,13 +136,15 @@ while True:
 		continue
 	if event.error():
 		# handle error
-	else: 
+	else:
 		# process event
 
 ```
 
-####  Consumer - Message Class
-- it has the following methods:
+#### Consumer - Message Class
+
+it has the following methods:
+
 1. error() -> returns KafkaError or None
 2. key() -> returns a str, bytes or None
 3. value() -> returns str, bytes or None
@@ -152,8 +154,65 @@ while True:
 7. partition() -> returns int or None
 8. offset() -> returns int or None
 
+#### Consumer - Process Events
+
+```python
+
+while True:
+	event = comsumer.poll(timeout=1.0)
+	if event is None:
+                continue
+	if event.error():
+                # handle error
+        else:
+            key = event.key().decode('utf8')
+		    val = event.value().decode('utf8')
+		    print(f'Received {val} with key of {key}')
+
+		commit.commit(event) # to coomit the offset if auto commit is set to false.
 
 
+```
+
+## Confluent Schemas registry
+
+### Serializers
+
+    - converts data into bytes to be stored in kafka topic
+
+```python
+serializer = JSONSerializer(sr_client,schema_registry_client, to_dict=obj_to_dict)
+
+key = string_serializer(str(uuid4())),
+val = serializer(obj, SerializationContext(topic, MessageField.VALUE))
+
+produce.produce(topic = topic, key = key, value = val)
+
+```
+
+### Deserializers
+
+-   Converts bytes from Kafka topics into usable data
+
+```python
+deserializer = JSONDeserializer(sr_client, from_dict = dict_to_obj)
+
+obj = deserilizer(event.value(), serializationContext(event.topic(), MessageField.VALUE))
+
+
+```
+
+### SchemaRegistryClient
+
+-   Provides access to the schema registry
+
+    ```python
+    sr_client = SchemaRegistryClient({
+    	'url' : '<schema Registry endpoint >'
+    	'basic.auth.user.info':'<SR_UserName: SR_Password>'
+    })
+
+    ```
 
 # Kafka Ecosytem
 
